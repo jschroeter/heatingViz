@@ -11,7 +11,11 @@ async function getData(sheetName) {
         let [day, month, year] = date.split('.');
         let [hour, minute, second] = time.split(':');
         let dateObject = new Date(year, month - 1, day, hour, minute, second);
-        data.push([dateObject, parseFloat(row.Watt)]);
+        let power = parseFloat(row.Watt);
+        if (power <= 10) {
+          power = 0; // linearize little standby consumption
+        }
+        data.push([dateObject, power]);
       });
     });
   return data;
