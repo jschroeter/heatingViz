@@ -28,7 +28,7 @@ async function init() {
       type: 'line',
       symbol: 'none',
       sampling: 'lttb',
-      step: 'start',
+      step: 'end',
       itemStyle: {
         color,
       },
@@ -91,6 +91,15 @@ async function init() {
         },
         {
           xAxis: '2022-04-22 22:32:00'
+        }
+      ],
+      [
+        {
+          name: 'Unnötige Speicherladung',
+          xAxis: '2022-04-27 11:25:00'
+        },
+        {
+          xAxis: '2022-04-27 11:34:00'
         }
       ],
       [
