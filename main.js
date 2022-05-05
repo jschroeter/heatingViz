@@ -55,8 +55,16 @@ async function init() {
       },
       data: [
         {
-          name: 'Eco-Mode aktiviert',
+          name: 'Zirkulation: Eco-Mode an',
           xAxis: '2022-04-24 18:00:00'
+        },
+        {
+          name: 'Solarthermie kaputt',
+          xAxis: '2022-04-30 09:52:00'
+        },
+        {
+          name: 'Zirkulation: Eco-Mode aus; Zeiten angepasst',
+          xAxis: '2022-05-04 22:00:00'
         }
       ]
   };
@@ -104,20 +112,11 @@ async function init() {
       ],
       [
         {
-          name: 'Solarthermie Fehlfunktion',
-          xAxis: '2022-05-01 09:52:00'
+          name: 'Unnötige Speicherladung',
+          xAxis: '2022-04-29 08:53:00'
         },
         {
-          xAxis: '2022-05-01 17:43:00'
-        }
-      ],
-      [
-        {
-          name: 'Solarthermie Fehlfunktion',
-          xAxis: '2022-05-02 08:44:00'
-        },
-        {
-          xAxis: '2022-05-02 17:43:00'
+          xAxis: '2022-04-29 09:30:00'
         }
       ]
     ]
