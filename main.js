@@ -169,10 +169,11 @@ async function init() {
         type: 'inside',
         startValue: zoomDateStart,
         endValue: zoomDateEnd,
+        filterMode: 'none' // see https://github.com/apache/echarts/issues/3637
       },
       {
         startValue: zoomDateStart,
-        endValue: zoomDateEnd,
+        endValue: zoomDateEnd
       },
     ],
     series,
