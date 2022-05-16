@@ -1,4 +1,11 @@
 async function getData(sheetName) {
+  let toDate = (dateString) => {
+    let [date, time] = dateString.split(' ');
+    let [day, month, year] = date.split('.');
+    let [hour, minute, second] = time.split(':');
+    return new Date(year, month - 1, day, hour, minute, second);
+  };
+
   let data = [];
   await fetch(
     'https://opensheet.elk.sh/18jTY-XRlSNsuitDiuXnzA-ldyG8hjSkQP6Ud6vt0_ko/' +
@@ -7,15 +14,15 @@ async function getData(sheetName) {
     .then((res) => res.json())
     .then((rawData) => {
       rawData.forEach((row) => {
-        let [date, time] = row.Zeit.split(' ');
-        let [day, month, year] = date.split('.');
-        let [hour, minute, second] = time.split(':');
-        let dateObject = new Date(year, month - 1, day, hour, minute, second);
-        let power = parseFloat(row.Watt);
-        if (power <= 10) {
-          power = 0; // linearize little standby consumption
+        let value = parseFloat(row.Value.replace(',', '.'));
+        if (isNaN(value)) {
+          value = row.Value;
         }
-        data.push([dateObject, power]);
+        if (row.TimeEnd) {
+          data.push([toDate(row.Time), toDate(row.TimeEnd), value]);
+        } else {
+          data.push([toDate(row.Time), value]);
+        }
       });
     });
   return data;
@@ -30,21 +37,50 @@ async function init() {
       sampling: 'lttb',
       step: 'end',
       itemStyle: {
-        color,
+        color
       },
       lineStyle: {
-        width: 0,
+        width: 0
       },
       areaStyle: {},
-      data,
+      data
     };
   }
-  let [warmwasser, heizung, solar] = await Promise.all([
+  function linearizeStandby(entry) {
+    let power = entry[1];
+    if (power <= 10) {
+      power = 0;
+    }
+    return [entry[0], power];
+  }
+  let [warmwasser, heizung, solar, temperatur, marker] = await Promise.all([
     getData('Warmwasser'),
     getData('Heizung'),
     getData('Solar'),
+    getData('Temperatur'),
+    getData('Marker')
   ]);
-  let warmwasserSeries = buildSeries('Warmwasser', 'blue', warmwasser);
+
+  let markerLines = [];
+  let markerAreas = [];
+  marker.forEach(item => {
+    if (item.length === 3) {
+      markerAreas.push([{
+        xAxis: item[0],
+        name: item[2]
+      }, {
+        xAxis: item[1]
+      }]);
+    } else {
+      markerLines.push({
+        xAxis: item[0],
+        name: item[1]
+      });
+    }
+  });
+ 
+
+  let warmwasserSeries = buildSeries('Warmwasser', 'blue', warmwasser.map(linearizeStandby));
   warmwasserSeries.markLine = {
       lineStyle: {
         color: 'black',
@@ -53,80 +89,30 @@ async function init() {
       label: {
         formatter: '{b}' // bug in echarts?
       },
-      data: [
-        {
-          name: 'Zirkulation: Eco-Mode an',
-          xAxis: '2022-04-24 18:00:00'
-        },
-        {
-          name: 'Solarthermie kaputt',
-          xAxis: '2022-04-30 09:52:00'
-        },
-        {
-          name: 'Zirkulation: Eco-Mode aus; Zeiten angepasst',
-          xAxis: '2022-05-04 22:00:00'
-        }
-      ]
+      data: markerLines
   };
 
   warmwasserSeries.markArea = {
     itemStyle: {
       color: 'rgba(255, 0, 0, 0.1)'
     },
-    data: [
-      [
-        {
-          name: 'Unnötige Speicherladung',
-          xAxis: '2022-04-20 22:44:00'
-        },
-        {
-          xAxis: '2022-04-20 23:25:00'
-        }
-      ],
-      [
-        {
-          name: 'Unnötige Speicherladung',
-          xAxis: '2022-04-21 23:04:00'
-        },
-        {
-          xAxis: '2022-04-21 23:34:00'
-        }
-      ],
-      [
-        {
-          name: 'Unnötige Speicherladung',
-          xAxis: '2022-04-22 21:52:00'
-        },
-        {
-          xAxis: '2022-04-22 22:32:00'
-        }
-      ],
-      [
-        {
-          name: 'Unnötige Speicherladung',
-          xAxis: '2022-04-27 11:25:00'
-        },
-        {
-          xAxis: '2022-04-27 11:34:00'
-        }
-      ],
-      [
-        {
-          name: 'Unnötige Speicherladung',
-          xAxis: '2022-04-29 08:53:00'
-        },
-        {
-          xAxis: '2022-04-29 09:30:00'
-        }
-      ]
-    ]
-    
+    data: markerAreas
+  };
+
+  let temperaturSeries = {
+    ...buildSeries('Außentemperatur', 'pink', temperatur),
+    areaStyle: null,
+    lineStyle: {
+      width: 1.2
+    },
+    step: null
   };
 
   let series = [
     warmwasserSeries,
-    buildSeries('Solar', 'orange', solar),
-    buildSeries('Gas', 'grey', heizung),
+    buildSeries('Solar', 'orange', solar.map(linearizeStandby)),
+    buildSeries('Gas', 'grey', heizung.map(linearizeStandby)),
+    temperaturSeries
   ];
 
 
@@ -151,7 +137,7 @@ async function init() {
       },
     },
     legend: {
-      data: ['Warmwasser', 'Solar', 'Gas'],
+      data: series.map(item => item.name),
     },
     xAxis: {
       type: 'time',
@@ -159,10 +145,7 @@ async function init() {
     },
     yAxis: {
       type: 'value',
-      boundaryGap: false,
-      axisLabel: {
-        formatter: '{value} W',
-      },
+      boundaryGap: false
     },
     dataZoom: [
       {
