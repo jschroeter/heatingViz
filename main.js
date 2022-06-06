@@ -34,7 +34,7 @@ async function init() {
       name,
       type: 'line',
       symbol: 'none',
-      sampling: 'lttb',
+      // sampling: 'lttb',
       step: 'end',
       itemStyle: {
         color
@@ -111,7 +111,7 @@ async function init() {
   let series = [
     warmwasserSeries,
     buildSeries('Solar', 'orange', solar.map(linearizeStandby)),
-    buildSeries('Gas', 'grey', heizung.map(linearizeStandby)),
+    buildSeries('Gas', 'black', heizung.map(linearizeStandby)),
     temperaturSeries
   ];
 
