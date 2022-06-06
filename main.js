@@ -109,8 +109,8 @@ async function init() {
   };
 
   let series = [
-    warmwasserSeries,
     buildSeries('Solar', 'orange', solar.map(linearizeStandby)),
+    warmwasserSeries,
     buildSeries('Gas', 'black', heizung.map(linearizeStandby)),
     temperaturSeries
   ];
